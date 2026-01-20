@@ -1,0 +1,55 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Subreddit {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  matches   Match[]
+  
+  @@map("subreddits")
+}
+
+model Keyword {
+  id        String   @id @default(cuid())
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  matches   Match[]
+  
+  @@unique([value])
+  @@map("keywords")
+}
+
+model Match {
+  id          String    @id @default(cuid())
+  subredditId String
+  keywordId   String
+  postId      String    @unique
+  title       String
+  url         String
+  score       Int
+  comments    Int
+  relevance   Float     // 0-100
+  sentiment   String?   // positive, neutral, negative
+  summary     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  subreddit   Subreddit @relation(fields: [subredditId], references: [id])
+  keyword     Keyword   @relation(fields: [keywordId], references: [id])
+  
+  @@map("matches")
+}
