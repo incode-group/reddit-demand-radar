@@ -34,23 +34,6 @@ cd frontend
 npm install
 ```
 
-### Environment Setup
-
-1. **Backend** - Create `backend/.env`:
-```env
-DATABASE_URL=postgresql://postgres.epeoeawijyovmvvbduam:W9Q!ctMgF8!vvn-@aws-1-eu-west-1.pooler.supabase.com:6543/postgres
-PORT=4000
-NODE_ENV=development
-AI_PROVIDER=openai
-OPENAI_API_KEY=your_openai_key_here
-GEMINI_API_KEY=your_gemini_key_here
-FRONTEND_URL=http://localhost:3000
-```
-
-2. **Database Setup**:
-   - Run the SQL migration manually from `backend/prisma/migrations/001_initial_schema.sql` against your Supabase database
-   - Generate Prisma client: `cd backend && npx prisma generate`
-
 ### Running the Application
 
 **Run both frontend and backend simultaneously**:
