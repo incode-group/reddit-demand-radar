@@ -69,6 +69,7 @@ backend/prisma/migrations/*.sql
 !backend/prisma/migrations/001_initial_schema.sql
 
 # NestJS
+backend/.env
 backend/dist/
 backend/.nest/
 

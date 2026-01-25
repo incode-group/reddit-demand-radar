@@ -11,5 +11,8 @@ export const appConfig = registerAs('app', () => ({
   gemini: {
     apiKey: process.env.GEMINI_API_KEY ?? '',
   },
+  redditSubredditNameSearchApiUrl:
+    process.env.REDDIT_SUBREDDIT_NAME_SEARCH_API_URL ??
+    'https://www.reddit.com/api/search_reddit_names.json',
 }));
 
