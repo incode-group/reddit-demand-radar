@@ -207,47 +207,24 @@ export function KeywordInput({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="absolute z-50 mt-2 w-full rounded-xl border-2 border-[#e9d5ff] bg-gradient-to-br from-white via-[#faf5ff] to-white shadow-xl shadow-purple-500/20 overflow-hidden"
+                className="absolute z-50 mt-2 w-full rounded-lg border-2 border-[#e9d5ff] bg-white shadow-lg shadow-purple-500/10"
               >
-                <div className="p-2 bg-[#f5f3ff] border-b border-[#e9d5ff]">
-                  <span className="text-xs font-semibold text-[#6b21a8] uppercase tracking-wide">
-                    Suggested Keywords
-                  </span>
-                </div>
-                <div className="max-h-64 overflow-y-auto">
+                <div className="max-h-60 overflow-y-auto p-1">
                   {suggestions.map((suggestion, index) => (
                     <motion.button
                       key={suggestion.keyword}
                       onClick={() => handleAdd(suggestion.keyword)}
-                      className={`w-full px-4 py-3 text-left transition-all ${
+                      className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors ${
                         index === selectedIndex
-                          ? "bg-[#e9d5ff] text-[#6b21a8] border-l-4 border-[#6b21a8]"
-                          : "text-gray-700 hover:bg-[#f5f3ff] hover:border-l-4 hover:border-[#e9d5ff]"
+                          ? "bg-[#f5f3ff] text-[#6b21a8]"
+                          : "text-gray-700 hover:bg-[#f5f3ff]"
                       }`}
-                      whileHover={{ x: 4 }}
-                      whileTap={{ scale: 0.99 }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-2 h-2 bg-[#6b21a8] rounded-full"></div>
-                          <span className="font-medium text-sm">
-                            {suggestion.keyword}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-full border border-gray-200">
-                            {suggestion.results} posts
-                          </span>
-                          <div className="w-4 h-4 bg-gradient-to-br from-[#6b21a8] to-[#a855f7] rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        </div>
-                      </div>
+                      {suggestion.keyword}
                     </motion.button>
                   ))}
-                </div>
-                <div className="p-2 bg-[#f5f3ff] border-t border-[#e9d5ff]">
-                  <span className="text-xs text-gray-500">
-                    Use arrow keys to navigate • Enter to select
-                  </span>
                 </div>
               </motion.div>
             )}
