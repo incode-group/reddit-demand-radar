@@ -9,9 +9,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { SubredditSelector } from "@/components/dashboard/subreddit-selector";
 import { KeywordInput } from "@/components/dashboard/keyword-input";
-import { AnalyzeButton } from "@/components/dashboard/analyze-button";
 import { ResultsView } from "@/components/dashboard/results-view";
 
 export default function Home() {
@@ -21,15 +22,67 @@ export default function Home() {
   const [showResults, setShowResults] = React.useState(false);
   const [analysisResults, setAnalysisResults] = React.useState<any>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [requestId, setRequestId] = React.useState<string | null>(null);
+  const [status, setStatus] = React.useState<any>(null);
+  const [polling, setPolling] = React.useState(false);
+
+  // Status polling effect
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+
+    if (requestId && polling) {
+      console.log("Starting polling for request:", requestId);
+      interval = setInterval(async () => {
+        try {
+          console.log("Polling status for request:", requestId);
+          const response = await fetch(`/api/status/${requestId}`);
+          console.log("Status response:", response.status);
+
+          if (response.ok) {
+            const statusData = await response.json();
+            console.log("Status data:", statusData);
+            setStatus(statusData);
+
+            if (statusData.status === "completed") {
+              console.log("Analysis completed, setting results");
+              setPolling(false);
+              setAnalysisResults(statusData.results);
+              setShowResults(true);
+              setError(null);
+            } else if (statusData.status === "failed") {
+              console.log("Analysis failed:", statusData.error);
+              setPolling(false);
+              setError(statusData.error || "Analysis failed");
+            }
+          } else {
+            console.error("Status request failed:", response.status);
+          }
+        } catch (err) {
+          console.error("Error polling status:", err);
+        }
+      }, 2000); // Poll every 2 seconds
+    }
+
+    return () => {
+      if (interval) {
+        console.log("Clearing polling interval");
+        clearInterval(interval);
+      }
+    };
+  }, [requestId, polling]);
 
   const handleAnalyze = async () => {
     if (subreddits.length === 0 || keywords.length === 0) {
+      setError("Please select subreddits and add keywords first.");
       return;
     }
 
     setIsAnalyzing(true);
     setError(null);
     setShowResults(false);
+    setAnalysisResults(null);
+    setStatus(null);
+    setRequestId(null);
 
     try {
       const response = await fetch("/api/reddit/analyze", {
@@ -50,13 +103,15 @@ export default function Home() {
           const errorData = await response.json();
           throw new Error(errorData.message || "Invalid request");
         } else {
-          throw new Error("Failed to analyze data");
+          throw new Error("Failed to start analysis");
         }
       }
 
       const data = await response.json();
-      setAnalysisResults(data);
-      setShowResults(true);
+      console.log("Received data from analyze:", data);
+      console.log("Request ID:", data.requestId);
+      setRequestId(data.requestId);
+      setPolling(true);
     } catch (err) {
       console.error("Analysis error:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -128,11 +183,99 @@ export default function Home() {
             </Card>
 
             {/* Analyze Button */}
-            <AnalyzeButton
-              onClick={handleAnalyze}
-              isLoading={isAnalyzing}
-              disabled={!canAnalyze}
-            />
+            <Card>
+              <CardHeader>
+                <CardTitle>Start Analysis</CardTitle>
+                <CardDescription>
+                  Click to begin the analysis process
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Button
+                  onClick={handleAnalyze}
+                  disabled={!canAnalyze || isAnalyzing}
+                  className="w-full"
+                >
+                  {isAnalyzing ? "Starting..." : "Search & Analyze"}
+                </Button>
+
+                {/* Debug Button */}
+                {requestId && (
+                  <Button
+                    variant="outline"
+                    onClick={async () => {
+                      console.log("Manual status check for:", requestId);
+                      try {
+                        const response = await fetch(
+                          `/api/status/${requestId}`,
+                        );
+                        console.log("Manual check response:", response.status);
+                        if (response.ok) {
+                          const data = await response.json();
+                          console.log("Manual check data:", data);
+                          setStatus(data);
+                          if (data.status === "completed") {
+                            setAnalysisResults(data.results);
+                            setShowResults(true);
+                          }
+                        }
+                      } catch (err) {
+                        console.error("Manual check error:", err);
+                      }
+                    }}
+                    className="w-full"
+                  >
+                    Manual Status Check
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Status Display */}
+            {status && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Analysis Status</CardTitle>
+                  <CardDescription>
+                    Current progress of your analysis request
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Status:</span>
+                    <Badge
+                      variant={
+                        status.status === "completed"
+                          ? "default"
+                          : status.status === "failed"
+                            ? "secondary"
+                            : "secondary"
+                      }
+                    >
+                      {status.status}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Progress:</span>
+                    <span className="text-sm text-gray-600">
+                      {status.progress}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-purple-600 h-2 rounded-full"
+                      style={{ width: `${status.progress}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-2">{status.message}</p>
+                  {status.error && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                      <p className="text-red-700 text-sm">{status.error}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </motion.div>
 
           {/* Right Column - Stats/Info */}
@@ -167,6 +310,22 @@ export default function Home() {
                 </div>
               </CardContent>
             </Card>
+
+            {requestId && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Request ID</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm font-mono bg-gray-100 p-2 rounded">
+                    {requestId}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Use this ID to track your analysis progress
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </motion.div>
         </div>
 

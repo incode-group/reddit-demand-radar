@@ -11,7 +11,11 @@ export class AnalysisController {
   async analyzeContent(
     @Body() analyzeRequestDto: AnalyzeRequestDto,
     @Req() request: Request,
-  ) {
-    return this.analysisService.analyzeContent(analyzeRequestDto, request);
+  ): Promise<{ requestId: string }> {
+    const result = await this.analysisService.analyzeContent(
+      analyzeRequestDto,
+      request,
+    );
+    return { requestId: result.requestId };
   }
 }

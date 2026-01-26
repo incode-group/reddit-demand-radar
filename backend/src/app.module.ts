@@ -8,6 +8,7 @@ import { KeywordSuggestionsModule } from "./modules/keyword-suggestions/keyword-
 import { PrismaModule } from "./modules/prisma/prisma.module";
 import { RedisModule } from "./modules/redis/redis.module";
 import { RedditModule } from "./modules/reddit/reddit.module";
+import { StatusModule } from "./modules/status/status.module";
 import { AppController } from "./app.controller";
 
 @Module({
@@ -22,6 +23,7 @@ import { AppController } from "./app.controller";
     AIModule,
     AnalysisModule,
     AnalyticsModule,
+    StatusModule,
     RedditModule,
     KeywordSuggestionsModule,
   ],

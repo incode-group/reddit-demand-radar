@@ -5,9 +5,10 @@ import { RedditModule } from "../reddit/reddit.module";
 import { AIModule } from "../ai/ai.module";
 import { RedisModule } from "../redis/redis.module";
 import { AnalyticsModule } from "../analytics/analytics.module";
+import { StatusModule } from "../status/status.module";
 
 @Module({
-  imports: [RedditModule, AIModule, RedisModule, AnalyticsModule],
+  imports: [RedditModule, AIModule, RedisModule, AnalyticsModule, StatusModule],
   providers: [AnalysisService],
   controllers: [AnalysisController],
 })

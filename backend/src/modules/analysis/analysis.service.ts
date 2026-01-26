@@ -11,6 +11,7 @@ import {
 import * as natural from "natural";
 import { RedisService } from "../redis/redis.service";
 import { AnalyticsService } from "../analytics/analytics.service";
+import { StatusService } from "../status/status.service";
 import { Logger } from "@nestjs/common";
 import { Request } from "express";
 
@@ -29,89 +30,156 @@ export class AnalysisService {
     private redditService: RedditService,
     private geminiProvider: GeminiProvider,
     private analyticsService: AnalyticsService,
+    private statusService: StatusService,
   ) {}
 
   async analyzeContent(
     request: AnalyzeRequestDto,
     httpRequest: Request,
   ): Promise<any> {
-    this.logger.log(
-      `Starting analysis for subreddits: [${request.subreddits.join(", ")}] with keywords: [${request.keywords.join(", ")}]`,
-    );
-
-    // Input validation
-    this.validateInput(request);
-
-    // Rate limiting check
-    await this.checkRateLimit();
-
-    // Get Reddit data
-    const redditData = await this.fetchRedditData(request);
-    this.logger.log(`Fetched ${redditData.length} posts from Reddit`);
-
-    // Multi-stage filtering
-    const filteredData = this.applyMultiStageFiltering(
-      redditData,
+    // Create status tracking
+    const status = await this.statusService.createRequest(
+      request.subreddits,
       request.keywords,
     );
-    this.logger.log(
-      `Filtered data: ${redditData.length} -> ${filteredData.length} posts (${Math.round((filteredData.length / redditData.length) * 100)}%)`,
-    );
 
-    // AI analysis for posts
-    const analysisResults = await this.performAIAnalysis(
-      filteredData,
-      request.keywords,
-    );
-    const highIntentResults = analysisResults.filter(
-      (result) => result.mentioned,
-    );
-    this.logger.log(
-      `Posts AI analysis completed: ${analysisResults.length} analyzed, ${highIntentResults.length} high-intent matches found`,
-    );
-
-    // Comments analysis
-    const commentsAnalysisResults = await this.performCommentsAnalysis(
-      filteredData,
-      request.keywords,
-    );
-    const highIntentCommentResults = commentsAnalysisResults.filter(
-      (result) => result.mentioned,
-    );
-    this.logger.log(
-      `Comments analysis completed: ${commentsAnalysisResults.length} analyzed, ${highIntentCommentResults.length} high-intent matches found`,
-    );
-
-    const response = {
-      subreddits: request.subreddits,
-      keywords: request.keywords,
-      totalPosts: redditData.length,
-      filteredPosts: filteredData.length,
-      analysisResults,
-      commentsAnalysisResults,
-      highIntentCount: highIntentResults.length,
-      highIntentCommentsCount: highIntentCommentResults.length,
-      processingTime: new Date().toISOString(),
-    };
-
-    this.logger.log(
-      `Analysis completed successfully. Response: ${JSON.stringify(response, null, 2)}`,
-    );
-
-    // Track Reddit request analytics
-    this.analyticsService
-      .trackRedditRequest(
-        httpRequest,
-        request.subreddits,
-        request.keywords,
-        highIntentResults.length,
-        highIntentCommentResults.length,
-      )
-      .catch((error) =>
-        this.logger.error("Failed to track Reddit request:", error),
+    try {
+      this.logger.log(
+        `Starting analysis for subreddits: [${request.subreddits.join(", ")}] with keywords: [${request.keywords.join(", ")}]`,
       );
 
-    return response;
+      // Update status to in_progress
+      await this.statusService.updateStatus(
+        status.id,
+        "in_progress",
+        "Requesting",
+        5,
+      );
+
+      // Input validation
+      this.validateInput(request);
+
+      // Rate limiting check
+      await this.checkRateLimit();
+
+      // Update status for Reddit data fetching
+      await this.statusService.updateStatus(
+        status.id,
+        "in_progress",
+        "Searching in Reddit posts",
+        20,
+      );
+
+      // Get Reddit data
+      const redditData = await this.fetchRedditData(request);
+      this.logger.log(`Fetched ${redditData.length} posts from Reddit`);
+
+      // Update status for filtering
+      await this.statusService.updateStatus(
+        status.id,
+        "in_progress",
+        "Searching in Reddit comments",
+        40,
+      );
+
+      // Multi-stage filtering
+      const filteredData = this.applyMultiStageFiltering(
+        redditData,
+        request.keywords,
+      );
+      this.logger.log(
+        `Filtered data: ${redditData.length} -> ${filteredData.length} posts (${Math.round((filteredData.length / redditData.length) * 100)}%)`,
+      );
+
+      // Update status for AI analysis
+      await this.statusService.updateStatus(
+        status.id,
+        "in_progress",
+        "Analysing keywords",
+        60,
+      );
+
+      // AI analysis for posts
+      const analysisResults = await this.performAIAnalysis(
+        filteredData,
+        request.keywords,
+      );
+      const highIntentResults = analysisResults.filter(
+        (result) => result.mentioned,
+      );
+      this.logger.log(
+        `Posts AI analysis completed: ${analysisResults.length} analyzed, ${highIntentResults.length} high-intent matches found`,
+      );
+
+      // Update status for comments analysis
+      await this.statusService.updateStatus(
+        status.id,
+        "in_progress",
+        "AI is analysing",
+        80,
+      );
+
+      // Comments analysis
+      const commentsAnalysisResults = await this.performCommentsAnalysis(
+        filteredData,
+        request.keywords,
+      );
+      const highIntentCommentResults = commentsAnalysisResults.filter(
+        (result) => result.mentioned,
+      );
+      this.logger.log(
+        `Comments analysis completed: ${commentsAnalysisResults.length} analyzed, ${highIntentCommentResults.length} high-intent matches found`,
+      );
+
+      // Update status for grouping results
+      await this.statusService.updateStatus(
+        status.id,
+        "in_progress",
+        "Group the answer",
+        90,
+      );
+
+      const response = {
+        subreddits: request.subreddits,
+        keywords: request.keywords,
+        totalPosts: redditData.length,
+        filteredPosts: filteredData.length,
+        analysisResults,
+        commentsAnalysisResults,
+        highIntentCount: highIntentResults.length,
+        highIntentCommentsCount: highIntentCommentResults.length,
+        processingTime: new Date().toISOString(),
+      };
+
+      this.logger.log(
+        `Analysis completed successfully. Response: ${JSON.stringify(response, null, 2)}`,
+      );
+
+      // Update status to completed
+      await this.statusService.markCompleted(status.id, response);
+
+      // Track Reddit request analytics
+      this.analyticsService
+        .trackRedditRequest(
+          httpRequest,
+          request.subreddits,
+          request.keywords,
+          highIntentResults.length,
+          highIntentCommentResults.length,
+        )
+        .catch((error) =>
+          this.logger.error("Failed to track Reddit request:", error),
+        );
+
+      return { requestId: status.id, ...response };
+    } catch (error) {
+      this.logger.error(`Analysis failed for request ${status.id}:`, error);
+
+      // Mark status as failed
+      await this.statusService.markFailed(status.id, error.message);
+
+      throw error;
+    }
   }
 
   private validateInput(request: AnalyzeRequestDto) {
