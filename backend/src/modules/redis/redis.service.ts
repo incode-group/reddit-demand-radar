@@ -1,17 +1,19 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import Redis from 'ioredis';
+import { Injectable, OnModuleDestroy } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import Redis from "ioredis";
 
 @Injectable()
 export class RedisService implements OnModuleDestroy {
   private client: Redis;
 
   constructor(private configService: ConfigService) {
-    const redisUrl =
-      this.configService.get<string>('REDIS_URL') ||
-      this.configService.get<string>('REDIS_HOST')
-        ? `redis://${this.configService.get<string>('REDIS_HOST')}:${this.configService.get<number>('REDIS_PORT') || 6379}`
-        : 'redis://localhost:6379';
+    let redisUrl = this.configService.get<string>("REDIS_URL");
+
+    if (!redisUrl) {
+      const host = this.configService.get<string>("REDIS_HOST") || "localhost";
+      const port = this.configService.get<number>("REDIS_PORT") || 6379;
+      redisUrl = `redis://${host}:${port}`;
+    }
 
     this.client = new Redis(redisUrl, {
       retryStrategy: (times) => {
@@ -21,12 +23,12 @@ export class RedisService implements OnModuleDestroy {
       maxRetriesPerRequest: 3,
     });
 
-    this.client.on('error', (err) => {
-      console.error('Redis Client Error:', err);
+    this.client.on("error", (err) => {
+      console.error("Redis Client Error:", err);
     });
 
-    this.client.on('connect', () => {
-      console.log('✅ Redis connected');
+    this.client.on("connect", () => {
+      console.log("✅ Redis connected");
     });
   }
 
@@ -34,7 +36,7 @@ export class RedisService implements OnModuleDestroy {
     try {
       return await this.client.get(key);
     } catch (error) {
-      console.error('Redis GET error:', error);
+      console.error("Redis GET error:", error);
       return null;
     }
   }
@@ -47,7 +49,7 @@ export class RedisService implements OnModuleDestroy {
         await this.client.set(key, value);
       }
     } catch (error) {
-      console.error('Redis SET error:', error);
+      console.error("Redis SET error:", error);
     }
   }
 
@@ -56,7 +58,7 @@ export class RedisService implements OnModuleDestroy {
       const data = await this.get(key);
       return data ? JSON.parse(data) : null;
     } catch (error) {
-      console.error('Redis GET JSON error:', error);
+      console.error("Redis GET JSON error:", error);
       return null;
     }
   }
@@ -65,7 +67,7 @@ export class RedisService implements OnModuleDestroy {
     try {
       await this.set(key, JSON.stringify(value), ttlSeconds);
     } catch (error) {
-      console.error('Redis SET JSON error:', error);
+      console.error("Redis SET JSON error:", error);
     }
   }
 
@@ -73,7 +75,7 @@ export class RedisService implements OnModuleDestroy {
     try {
       await this.client.del(key);
     } catch (error) {
-      console.error('Redis DELETE error:', error);
+      console.error("Redis DELETE error:", error);
     }
   }
 
@@ -82,7 +84,7 @@ export class RedisService implements OnModuleDestroy {
       const result = await this.client.exists(key);
       return result === 1;
     } catch (error) {
-      console.error('Redis EXISTS error:', error);
+      console.error("Redis EXISTS error:", error);
       return false;
     }
   }

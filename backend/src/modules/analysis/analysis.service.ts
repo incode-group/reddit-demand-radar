@@ -175,7 +175,8 @@ export class AnalysisService {
         const enrichedPosts = posts.map((post) => ({
           ...post,
           subreddit: subreddit,
-          postLink: `https://reddit.com${post.permalink}`,
+          postLink:
+            post.url || `https://reddit.com/r/${subreddit}/comments/${post.id}`,
         }));
 
         allPosts.push(...enrichedPosts);
