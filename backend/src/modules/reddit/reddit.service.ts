@@ -146,4 +146,49 @@ export class RedditService {
       throw error;
     }
   }
+
+  async getComments(postId: string, limit: number = 100): Promise<any[]> {
+    try {
+      const fetchOptions: RequestInit = {
+        headers: {
+          "User-Agent": "RedditDemandRadar/1.0",
+          "Content-Type": "application/json",
+        },
+      };
+
+      const url = `https://oauth.reddit.com/comments/${postId}.json?limit=${limit}`;
+
+      const response = await fetch(url, fetchOptions);
+
+      if (!response.ok) {
+        throw new Error(`Reddit API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (
+        data &&
+        Array.isArray(data) &&
+        data.length > 1 &&
+        data[1].data.children
+      ) {
+        return data[1].data.children
+          .filter((child: any) => child.kind === "t1") // Filter only comments (not more comments)
+          .map((child: any) => ({
+            id: child.data.id,
+            body: child.data.body,
+            author: child.data.author,
+            created_utc: child.data.created_utc,
+            score: child.data.score,
+            subreddit: child.data.subreddit,
+            post_id: postId,
+          }));
+      }
+
+      return [];
+    } catch (error) {
+      console.error(`Error fetching comments for post ${postId}:`, error);
+      throw error;
+    }
+  }
 }

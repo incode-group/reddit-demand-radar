@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import { AppConfigModule } from "./config/config.module";
 import { AIModule } from "./modules/ai/ai.module";
 import { AnalysisModule } from "./modules/analysis/analysis.module";
+import { AnalyticsModule } from "./modules/analytics/analytics.module";
 import { KeywordSuggestionsModule } from "./modules/keyword-suggestions/keyword-suggestions.module";
 import { PrismaModule } from "./modules/prisma/prisma.module";
 import { RedisModule } from "./modules/redis/redis.module";
@@ -20,6 +21,7 @@ import { AppController } from "./app.controller";
     RedisModule,
     AIModule,
     AnalysisModule,
+    AnalyticsModule,
     RedditModule,
     KeywordSuggestionsModule,
   ],

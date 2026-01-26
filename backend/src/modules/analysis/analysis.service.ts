@@ -5,10 +5,14 @@ import { AnalyzeRequestDto } from "./dto/analyze-request.dto";
 import {
   AnalysisInput,
   AnalysisResult,
+  CommentsAnalysisInput,
+  CommentsAnalysisResult,
 } from "../ai/interfaces/ai-provider.interface";
 import * as natural from "natural";
 import { RedisService } from "../redis/redis.service";
+import { AnalyticsService } from "../analytics/analytics.service";
 import { Logger } from "@nestjs/common";
+import { Request } from "express";
 
 @Injectable()
 export class AnalysisService {
@@ -17,13 +21,20 @@ export class AnalysisService {
   private readonly REQUEST_DELAY = 2500; // 2.5 seconds in milliseconds
   private readonly logger = new Logger(AnalysisService.name);
 
+  private readonly MAX_SUBREDDITS_COUNT = 1;
+  private readonly MAX_KEYWORDS_COUNT = 3;
+
   constructor(
     private readonly redis: RedisService,
     private redditService: RedditService,
     private geminiProvider: GeminiProvider,
+    private analyticsService: AnalyticsService,
   ) {}
 
-  async analyzeContent(request: AnalyzeRequestDto): Promise<any> {
+  async analyzeContent(
+    request: AnalyzeRequestDto,
+    httpRequest: Request,
+  ): Promise<any> {
     this.logger.log(
       `Starting analysis for subreddits: [${request.subreddits.join(", ")}] with keywords: [${request.keywords.join(", ")}]`,
     );
@@ -47,7 +58,7 @@ export class AnalysisService {
       `Filtered data: ${redditData.length} -> ${filteredData.length} posts (${Math.round((filteredData.length / redditData.length) * 100)}%)`,
     );
 
-    // AI analysis
+    // AI analysis for posts
     const analysisResults = await this.performAIAnalysis(
       filteredData,
       request.keywords,
@@ -56,7 +67,19 @@ export class AnalysisService {
       (result) => result.mentioned,
     );
     this.logger.log(
-      `AI analysis completed: ${analysisResults.length} analyzed, ${highIntentResults.length} high-intent matches found`,
+      `Posts AI analysis completed: ${analysisResults.length} analyzed, ${highIntentResults.length} high-intent matches found`,
+    );
+
+    // Comments analysis
+    const commentsAnalysisResults = await this.performCommentsAnalysis(
+      filteredData,
+      request.keywords,
+    );
+    const highIntentCommentResults = commentsAnalysisResults.filter(
+      (result) => result.mentioned,
+    );
+    this.logger.log(
+      `Comments analysis completed: ${commentsAnalysisResults.length} analyzed, ${highIntentCommentResults.length} high-intent matches found`,
     );
 
     const response = {
@@ -65,13 +88,28 @@ export class AnalysisService {
       totalPosts: redditData.length,
       filteredPosts: filteredData.length,
       analysisResults,
+      commentsAnalysisResults,
       highIntentCount: highIntentResults.length,
+      highIntentCommentsCount: highIntentCommentResults.length,
       processingTime: new Date().toISOString(),
     };
 
     this.logger.log(
       `Analysis completed successfully. Response: ${JSON.stringify(response, null, 2)}`,
     );
+
+    // Track Reddit request analytics
+    this.analyticsService
+      .trackRedditRequest(
+        httpRequest,
+        request.subreddits,
+        request.keywords,
+        highIntentResults.length,
+        highIntentCommentResults.length,
+      )
+      .catch((error) =>
+        this.logger.error("Failed to track Reddit request:", error),
+      );
 
     return response;
   }
@@ -97,7 +135,7 @@ export class AnalysisService {
       );
     }
 
-    if (request.subreddits.length > 3) {
+    if (request.subreddits.length > this.MAX_SUBREDDITS_COUNT) {
       this.logger.error(
         `Validation failed: Too many subreddits (${request.subreddits.length}), maximum 3 allowed`,
       );
@@ -107,7 +145,7 @@ export class AnalysisService {
       );
     }
 
-    if (request.keywords.length > 5) {
+    if (request.keywords.length > this.MAX_KEYWORDS_COUNT) {
       this.logger.error(
         `Validation failed: Too many keywords (${request.keywords.length}), maximum 5 allowed`,
       );
@@ -347,6 +385,63 @@ export class AnalysisService {
     );
 
     return enrichedResults;
+  }
+
+  private async performCommentsAnalysis(
+    data: any[],
+    keywords: string[],
+  ): Promise<CommentsAnalysisResult[]> {
+    const startTime = Date.now();
+    this.logger.log(
+      `Starting comments analysis for ${data.length} posts with keywords: [${keywords.join(", ")}]`,
+    );
+
+    // Fetch comments for each post
+    const commentsData: CommentsAnalysisInput[] = [];
+
+    for (const post of data) {
+      try {
+        // Add delay between comment requests
+        await this.delay(this.REQUEST_DELAY);
+
+        const comments = await this.redditService.getComments(post.id, 100);
+        const commentBodies = comments.map((comment) => comment.body);
+
+        if (commentBodies.length > 0) {
+          commentsData.push({
+            postId: post.id,
+            comments: commentBodies,
+            keywords: keywords,
+          });
+        }
+
+        // Increment rate limit counter for comments
+        await this.incrementRateLimit();
+      } catch (error) {
+        this.logger.error(
+          `Error fetching comments for post ${post.id}: ${error.message}`,
+        );
+        // Continue with other posts
+      }
+    }
+
+    this.logger.log(
+      `Fetched comments for ${commentsData.length} posts, total comments: ${commentsData.reduce((sum, cd) => sum + cd.comments.length, 0)}`,
+    );
+
+    // Analyze comments
+    const commentsAnalysisResults =
+      await this.geminiProvider.analyzeMultipleComments(commentsData);
+
+    const duration = Date.now() - startTime;
+    const highIntentCommentResults = commentsAnalysisResults.filter(
+      (result) => result.mentioned,
+    );
+    this.logger.log(
+      `Comments analysis completed in ${duration}ms: ${commentsAnalysisResults.length} analyzed, ${highIntentCommentResults.length} high-intent matches found`,
+    );
+
+    return commentsAnalysisResults;
   }
 
   private truncateText(text: string, maxLength: number): string {

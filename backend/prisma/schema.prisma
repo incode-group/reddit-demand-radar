@@ -8,6 +8,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  relationMode = "prisma"
 }
 
 model Subreddit {
@@ -52,4 +53,27 @@ model Match {
   keyword     Keyword   @relation(fields: [keywordId], references: [id])
   
   @@map("matches")
+}
+
+model GeminiRequest {
+  id              String   @id @default(cuid())
+  promptTokens    Int
+  completionTokens Int
+  totalTokens     Int
+  model           String
+  timestamp       DateTime @default(now())
+  
+  @@map("gemini_requests")
+}
+
+model RedditRequest {
+  id                  String   @id @default(cuid())
+  ipAddress           String?
+  subreddits          String   // JSON array of subreddits
+  keywords            String   // JSON array of keywords
+  subredditsMatchCount Int
+  commentsMatchCount  Int
+  timestamp           DateTime @default(now())
+  
+  @@map("reddit_requests")
 }

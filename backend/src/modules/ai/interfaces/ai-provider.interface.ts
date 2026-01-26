@@ -24,6 +24,23 @@ export interface AnalysisResult {
   analysis: string;
 }
 
+export interface CommentsAnalysisInput {
+  postId: string;
+  comments: string[];
+  keywords: string[];
+}
+
+export interface CommentsAnalysisResult {
+  postId: string;
+  mentioned: boolean;
+  mentionedKeywords: string[];
+  snippet: string;
+  confidence: number;
+  analysis: string;
+  commentCount: number;
+  analyzedCommentCount: number;
+}
+
 export interface AIProvider {
   analyzeContent(request: AIAnalysisRequest): Promise<AIAnalysisResponse>;
 }

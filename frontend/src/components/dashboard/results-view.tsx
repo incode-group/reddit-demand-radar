@@ -29,13 +29,26 @@ interface AnalysisResult {
   postLink?: string;
 }
 
+interface CommentsAnalysisResult {
+  postId: string;
+  mentioned: boolean;
+  mentionedKeywords: string[];
+  snippet: string;
+  confidence: number;
+  analysis: string;
+  commentCount: number;
+  analyzedCommentCount: number;
+}
+
 interface AnalysisResponse {
   subreddits: string[];
   keywords: string[];
   totalPosts: number;
   filteredPosts: number;
   analysisResults: AnalysisResult[];
+  commentsAnalysisResults: CommentsAnalysisResult[];
   highIntentCount: number;
+  highIntentCommentsCount: number;
   processingTime: string;
 }
 
@@ -125,11 +138,11 @@ export function ResultsView({ results }: ResultsViewProps) {
         </CardHeader>
       </Card>
 
-      {/* Results List */}
+      {/* Posts Results List */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-semibold text-[#6b21a8]">
-            High Intent Matches
+            High Intent Post Matches
           </h2>
           <Badge variant="secondary" className="text-sm">
             {highIntentCount} matches found
@@ -141,7 +154,7 @@ export function ResultsView({ results }: ResultsViewProps) {
             .filter((result) => result.mentioned)
             .map((result, index) => (
               <motion.div
-                key={index}
+                key={`post-${index}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -153,7 +166,7 @@ export function ResultsView({ results }: ResultsViewProps) {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <CardTitle className="text-lg mb-2">
-                          High Intent Match
+                          High Intent Post Match
                         </CardTitle>
                         <CardDescription className="flex items-center gap-4 flex-wrap">
                           <Badge variant="outline" className="text-xs">
@@ -212,6 +225,89 @@ export function ResultsView({ results }: ResultsViewProps) {
             ))}
         </AnimatePresence>
       </div>
+
+      {/* Comments Results List */}
+      {results.commentsAnalysisResults &&
+        results.commentsAnalysisResults.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold text-[#6b21a8]">
+                High Intent Comment Matches
+              </h2>
+              <Badge variant="secondary" className="text-sm">
+                {results.highIntentCommentsCount} matches found
+              </Badge>
+            </div>
+
+            <AnimatePresence mode="popLayout">
+              {results.commentsAnalysisResults
+                .filter((result) => result.mentioned)
+                .map((result, index) => (
+                  <motion.div
+                    key={`comment-${index}`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    layout
+                  >
+                    <Card className="hover:shadow-xl hover:shadow-blue-500/10 transition-all border-blue-200">
+                      <CardHeader>
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <CardTitle className="text-lg mb-2 flex items-center gap-2">
+                              <MessageSquare className="h-5 w-5 text-blue-600" />
+                              High Intent Comment Match
+                            </CardTitle>
+                            <CardDescription className="flex items-center gap-4 flex-wrap">
+                              <Badge variant="outline" className="text-xs">
+                                Confidence:{" "}
+                                {Math.round(result.confidence * 100)}%
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                Comments: {result.analyzedCommentCount}/
+                                {result.commentCount}
+                              </Badge>
+                              {result.mentionedKeywords.length > 0 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Keywords:{" "}
+                                  {result.mentionedKeywords.join(", ")}
+                                </Badge>
+                              )}
+                              <Badge
+                                variant="default"
+                                className="text-xs bg-blue-100 text-blue-800"
+                              >
+                                Post ID: {result.postId}
+                              </Badge>
+                            </CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div>
+                            <h3 className="text-sm font-semibold text-gray-600 mb-2">
+                              Snippet:
+                            </h3>
+                            <p className="text-gray-800 bg-blue-50 p-3 rounded-lg">
+                              "{result.snippet}"
+                            </p>
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-semibold text-gray-600 mb-2">
+                              Analysis:
+                            </h3>
+                            <p className="text-gray-700">{result.analysis}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+            </AnimatePresence>
+          </div>
+        )}
     </motion.div>
   );
 }

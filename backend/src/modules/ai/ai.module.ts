@@ -8,14 +8,17 @@ import {
   AiProviderInterface,
 } from "./interfaces/ai-provider.interface";
 import { AiController } from "./ai.controller";
+import { AnalyticsService } from "../analytics/analytics.service";
+import { AnalyticsModule } from "../analytics/analytics.module";
 
 const aiProviderFactory = (
   configService: ConfigService,
+  analyticsService: AnalyticsService, // Добавляем сюда
 ): AiProviderInterface => {
   const provider = configService.get<"openai" | "gemini">("app.aiProvider");
 
   if (provider === "gemini") {
-    return new GeminiProvider();
+    return new GeminiProvider(analyticsService);
   }
 
   return new OpenAIProvider(configService);
@@ -24,11 +27,11 @@ const aiProviderFactory = (
 const aiProvider: Provider = {
   provide: AI_PROVIDER_TOKEN,
   useFactory: aiProviderFactory,
-  inject: [ConfigService],
+  inject: [ConfigService, AnalyticsService],
 };
 
 @Module({
-  imports: [ConfigModule],
+  imports: [ConfigModule, AnalyticsModule],
   providers: [AIService, aiProvider, OpenAIProvider, GeminiProvider],
   controllers: [AiController],
   exports: [AIService, GeminiProvider],
