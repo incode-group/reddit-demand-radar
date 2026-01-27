@@ -9,10 +9,11 @@ const Card = React.forwardRef<
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <motion.div
+    {...(props as any)}
     ref={ref}
     className={cn(
       "rounded-xl border-2 border-[#e9d5ff] bg-white shadow-lg shadow-purple-500/5",
-      className
+      className,
     )}
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -42,7 +43,7 @@ const CardTitle = React.forwardRef<
     ref={ref}
     className={cn(
       "text-2xl font-semibold leading-none tracking-tight text-[#6b21a8]",
-      className
+      className,
     )}
     {...props}
   />
@@ -53,11 +54,7 @@ const CardDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
-  <p
-    ref={ref}
-    className={cn("text-sm text-gray-600", className)}
-    {...props}
-  />
+  <p ref={ref} className={cn("text-sm text-gray-600", className)} {...props} />
 ));
 CardDescription.displayName = "CardDescription";
 
@@ -81,4 +78,11 @@ const CardFooter = React.forwardRef<
 ));
 CardFooter.displayName = "CardFooter";
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };
+export {
+  Card,
+  CardHeader,
+  CardFooter,
+  CardTitle,
+  CardDescription,
+  CardContent,
+};

@@ -34,15 +34,10 @@ export class AnalysisService {
   ) {}
 
   async analyzeContent(
+    statusId: string,
     request: AnalyzeRequestDto,
     httpRequest: Request,
   ): Promise<any> {
-    // Create status tracking
-    const status = await this.statusService.createRequest(
-      request.subreddits,
-      request.keywords,
-    );
-
     try {
       this.logger.log(
         `Starting analysis for subreddits: [${request.subreddits.join(", ")}] with keywords: [${request.keywords.join(", ")}]`,
@@ -50,9 +45,9 @@ export class AnalysisService {
 
       // Update status to in_progress
       await this.statusService.updateStatus(
-        status.id,
+        statusId,
         "in_progress",
-        "Requesting",
+        "Initializing intelligence engine...",
         5,
       );
 
@@ -64,9 +59,9 @@ export class AnalysisService {
 
       // Update status for Reddit data fetching
       await this.statusService.updateStatus(
-        status.id,
+        statusId,
         "in_progress",
-        "Searching in Reddit posts",
+        "Scraping top discussions...",
         20,
       );
 
@@ -76,9 +71,9 @@ export class AnalysisService {
 
       // Update status for filtering
       await this.statusService.updateStatus(
-        status.id,
+        statusId,
         "in_progress",
-        "Searching in Reddit comments",
+        "Deep-diving into comment threads...",
         40,
       );
 
@@ -93,9 +88,9 @@ export class AnalysisService {
 
       // Update status for AI analysis
       await this.statusService.updateStatus(
-        status.id,
+        statusId,
         "in_progress",
-        "Analysing keywords",
+        "Feeding data to Gemini AI...",
         60,
       );
 
@@ -113,9 +108,9 @@ export class AnalysisService {
 
       // Update status for comments analysis
       await this.statusService.updateStatus(
-        status.id,
+        statusId,
         "in_progress",
-        "AI is analysing",
+        "Detecting high-intent signals...",
         80,
       );
 
@@ -133,9 +128,9 @@ export class AnalysisService {
 
       // Update status for grouping results
       await this.statusService.updateStatus(
-        status.id,
+        statusId,
         "in_progress",
-        "Group the answer",
+        "Finalizing market report...",
         90,
       );
 
@@ -156,7 +151,7 @@ export class AnalysisService {
       );
 
       // Update status to completed
-      await this.statusService.markCompleted(status.id, response);
+      await this.statusService.markCompleted(statusId, response);
 
       // Track Reddit request analytics
       this.analyticsService
@@ -171,12 +166,12 @@ export class AnalysisService {
           this.logger.error("Failed to track Reddit request:", error),
         );
 
-      return { requestId: status.id, ...response };
+      return { requestId: statusId, ...response };
     } catch (error) {
-      this.logger.error(`Analysis failed for request ${status.id}:`, error);
+      this.logger.error(`Analysis failed for request ${statusId}:`, error);
 
       // Mark status as failed
-      await this.statusService.markFailed(status.id, error.message);
+      await this.statusService.markFailed(statusId, error.message);
 
       throw error;
     }

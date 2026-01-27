@@ -20,7 +20,13 @@ source .env
 
 # Check required environment variables
 check_env_var() {
-    if [ -z "${!1}" ] || [ "${!1}" = "your_${1,,}_here" ]; then
+    # Получаем значение переменной по её имени (косвенная ссылка)
+    local var_value="${!1}"
+    # Приводим имя переменной к нижнему регистру универсальным способом
+    local lower_name=$(echo "$1" | tr '[:upper:]' '[:lower:]')
+    local placeholder="your_${lower_name}_here"
+
+    if [ -z "$var_value" ] || [ "$var_value" = "$placeholder" ]; then
         echo "❌ Error: $1 is not set in .env file"
         exit 1
     fi
@@ -28,9 +34,9 @@ check_env_var() {
 
 echo "📋 Checking required environment variables..."
 check_env_var "REDDIT_CLIENT_ID"
-check_env_var "REDDIT_CLIENT_SECRET"
+check_env_var "REDDIT_SECRET_KEY"
 check_env_var "REDDIT_USER_AGENT"
-check_env_var "GEMINI_API_KEY"
+check_env_var "GOOGLE_GEMINI_API_KEY"
 echo "✅ All required environment variables are set"
 
 # Create necessary directories

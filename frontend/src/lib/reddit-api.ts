@@ -10,7 +10,7 @@ function getCacheKey(query: string): string {
 function getCachedResult(query: string): string[] | null {
   const key = getCacheKey(query);
   const cached = requestCache.get(key);
-  
+
   if (!cached) {
     return null;
   }
@@ -26,12 +26,15 @@ function getCachedResult(query: string): string[] | null {
 
 function setCachedResult(query: string, data: string[]): void {
   const key = getCacheKey(query);
-  
+
   // Limit cache size to MAX_CACHE_SIZE
   if (requestCache.size >= MAX_CACHE_SIZE) {
     // Remove oldest entry
     const firstKey = requestCache.keys().next().value;
-    requestCache.delete(firstKey);
+
+    if (firstKey) {
+      requestCache.delete(firstKey);
+    }
   }
 
   requestCache.set(key, {
@@ -42,7 +45,7 @@ function setCachedResult(query: string, data: string[]): void {
 
 export async function searchSubreddits(
   query: string,
-  apiUrl: string = '/api/reddit/subreddits/search'
+  apiUrl: string = "/api/reddit/subreddits/search",
 ): Promise<string[]> {
   if (!query || query.trim().length < 2) {
     return [];
@@ -56,20 +59,21 @@ export async function searchSubreddits(
 
   try {
     const response = await fetch(`${apiUrl}?q=${encodeURIComponent(query)}`);
-    
+
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
     }
 
     const result = await response.json();
-    const suggestions = result.suggestions?.map((s: { name: string }) => s.name) || [];
-    
+    const suggestions =
+      result.suggestions?.map((s: { name: string }) => s.name) || [];
+
     // Cache the result
     setCachedResult(query, suggestions);
-    
+
     return suggestions;
   } catch (error) {
-    console.error('Error searching subreddits:', error);
+    console.error("Error searching subreddits:", error);
     return [];
   }
 }

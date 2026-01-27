@@ -4,8 +4,7 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "default" | "outline" | "ghost";
   size?: "default" | "sm" | "lg";
   isLoading?: boolean;
@@ -22,18 +21,17 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       disabled,
       ...props
     },
-    ref
+    ref,
   ) => {
     const baseStyles =
       "inline-flex items-center justify-center rounded-lg font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
-    
+
     const variants = {
       default:
         "bg-[#6b21a8] text-white hover:bg-[#7c3aed] active:scale-[0.98] shadow-lg shadow-purple-500/20",
       outline:
         "border-2 border-[#6b21a8] text-[#6b21a8] hover:bg-[#f5f3ff] active:scale-[0.98]",
-      ghost:
-        "text-[#6b21a8] hover:bg-[#f5f3ff] active:scale-[0.98]",
+      ghost: "text-[#6b21a8] hover:bg-[#f5f3ff] active:scale-[0.98]",
     };
 
     const sizes = {
@@ -44,13 +42,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <motion.button
+        {...(props as any)}
         ref={ref}
-        className={cn(
-          baseStyles,
-          variants[variant],
-          sizes[size],
-          className
-        )}
+        className={cn(baseStyles, variants[variant], sizes[size], className)}
         disabled={disabled || isLoading}
         whileHover={{ scale: disabled || isLoading ? 1 : 1.02 }}
         whileTap={{ scale: disabled || isLoading ? 1 : 0.98 }}
@@ -68,7 +62,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {children}
       </motion.button>
     );
-  }
+  },
 );
 
 Button.displayName = "Button";

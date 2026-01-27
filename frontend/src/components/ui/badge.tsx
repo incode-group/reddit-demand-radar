@@ -18,11 +18,12 @@ const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
 
     return (
       <motion.div
+        {...(props as any)}
         ref={ref}
         className={cn(
           "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium transition-colors",
           variants[variant],
-          className
+          className,
         )}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -30,7 +31,7 @@ const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
         {...props}
       />
     );
-  }
+  },
 );
 
 Badge.displayName = "Badge";

@@ -7,7 +7,7 @@ export async function GET(
   try {
     const { id } = await params;
     console.log("Fetching status for ID:", id);
-    const response = await fetch(`http://localhost:3000/status/${id}`);
+    const response = await fetch(`http://localhost:4000/status/${id}`);
     console.log("Backend response status:", response.status);
 
     if (!response.ok) {

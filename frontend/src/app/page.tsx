@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Card,
   CardContent,
@@ -49,10 +49,12 @@ export default function Home() {
               setAnalysisResults(statusData.results);
               setShowResults(true);
               setError(null);
+              setIsAnalyzing(false);
             } else if (statusData.status === "failed") {
               console.log("Analysis failed:", statusData.error);
               setPolling(false);
               setError(statusData.error || "Analysis failed");
+              setIsAnalyzing(false);
             }
           } else {
             console.error("Status request failed:", response.status);
@@ -85,6 +87,7 @@ export default function Home() {
     setRequestId(null);
 
     try {
+      setPolling(true);
       const response = await fetch("/api/reddit/analyze", {
         method: "POST",
         headers: {
@@ -111,12 +114,9 @@ export default function Home() {
       console.log("Received data from analyze:", data);
       console.log("Request ID:", data.requestId);
       setRequestId(data.requestId);
-      setPolling(true);
     } catch (err) {
       console.error("Analysis error:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setIsAnalyzing(false);
     }
   };
 
@@ -182,100 +182,72 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            {/* Analyze Button */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Start Analysis</CardTitle>
-                <CardDescription>
-                  Click to begin the analysis process
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button
-                  onClick={handleAnalyze}
-                  disabled={!canAnalyze || isAnalyzing}
-                  className="w-full"
-                >
-                  {isAnalyzing ? "Starting..." : "Search & Analyze"}
-                </Button>
-
-                {/* Debug Button */}
-                {requestId && (
-                  <Button
-                    variant="outline"
-                    onClick={async () => {
-                      console.log("Manual status check for:", requestId);
-                      try {
-                        const response = await fetch(
-                          `/api/status/${requestId}`,
-                        );
-                        console.log("Manual check response:", response.status);
-                        if (response.ok) {
-                          const data = await response.json();
-                          console.log("Manual check data:", data);
-                          setStatus(data);
-                          if (data.status === "completed") {
-                            setAnalysisResults(data.results);
-                            setShowResults(true);
-                          }
-                        }
-                      } catch (err) {
-                        console.error("Manual check error:", err);
-                      }
-                    }}
-                    className="w-full"
-                  >
-                    Manual Status Check
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Status Display */}
-            {status && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Analysis Status</CardTitle>
-                  <CardDescription>
-                    Current progress of your analysis request
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Status:</span>
-                    <Badge
-                      variant={
-                        status.status === "completed"
-                          ? "default"
-                          : status.status === "failed"
-                            ? "secondary"
-                            : "secondary"
-                      }
+            {/* Search & Analyze Button */}
+            <div className="space-y-4">
+              <Button
+                onClick={handleAnalyze}
+                disabled={!canAnalyze || isAnalyzing}
+                className="w-full h-12 flex items-center justify-center overflow-hidden" // Фиксируем высоту, чтобы кнопка не дергалась
+              >
+                <AnimatePresence mode="wait">
+                  {status && isAnalyzing ? (
+                    <motion.div
+                      key="status-active"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="flex items-center justify-center gap-4 w-full"
                     >
-                      {status.status}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Progress:</span>
-                    <span className="text-sm text-gray-600">
-                      {status.progress}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-purple-600 h-2 rounded-full"
-                      style={{ width: `${status.progress}%` }}
-                    ></div>
-                  </div>
-                  <p className="text-sm text-gray-600 mt-2">{status.message}</p>
-                  {status.error && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                      <p className="text-red-700 text-sm">{status.error}</p>
-                    </div>
+                      <span className="text-center truncate">
+                        {status.status === "completed"
+                          ? "Completed"
+                          : status.status === "failed"
+                            ? "Failed"
+                            : status.message}
+                      </span>
+                      <span className="text-center font-mono font-bold text-purple-200">
+                        {status.progress}%
+                      </span>
+                    </motion.div>
+                  ) : isAnalyzing ? (
+                    <motion.span
+                      key="starting"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      Starting engine...
+                    </motion.span>
+                  ) : (
+                    <motion.span
+                      key="idle"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      Search & Analyze
+                    </motion.span>
                   )}
-                </CardContent>
-              </Card>
-            )}
+                </AnimatePresence>
+              </Button>
+
+              {/* Request ID Display */}
+              {/* {requestId && (
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-500">Request ID:</p>
+                  <p className="text-sm font-mono bg-gray-100 p-2 rounded">
+                    {requestId}
+                  </p>
+                </div>
+              )} */}
+
+              {/* Error Display */}
+              {status?.error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-red-700 text-sm">{status.error}</p>
+                </div>
+              )}
+            </div>
           </motion.div>
 
           {/* Right Column - Stats/Info */}
@@ -311,7 +283,7 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            {requestId && (
+            {/* {requestId && (
               <Card>
                 <CardHeader>
                   <CardTitle>Request ID</CardTitle>
@@ -325,7 +297,7 @@ export default function Home() {
                   </p>
                 </CardContent>
               </Card>
-            )}
+            )} */}
           </motion.div>
         </div>
 
