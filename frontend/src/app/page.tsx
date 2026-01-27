@@ -117,6 +117,7 @@ export default function Home() {
     } catch (err) {
       console.error("Analysis error:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
+      setIsAnalyzing(false);
     }
   };
 

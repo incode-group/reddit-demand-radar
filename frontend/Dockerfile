@@ -2,6 +2,10 @@
 FROM node:22-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
+
+ARG NEXT_PUBLIC_BACKEND_URL
+ENV NEXT_PUBLIC_BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL
+
 COPY package*.json ./
 # Используем флаг, который спас нас в бэкенде
 RUN npm install --legacy-peer-deps

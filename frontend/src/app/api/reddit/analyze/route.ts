@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,6 +13,8 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+
+    console.log("Requesting backend by url", BACKEND_URL);
 
     const response = await fetch(`${BACKEND_URL}/analysis/analyze`, {
       method: "POST",

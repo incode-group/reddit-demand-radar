@@ -1,116 +1,76 @@
 #!/bin/bash
 
-# Reddit Demand Radar - Production Startup Script
-# This script sets up and starts the production environment
-
+# Reddit Demand Radar - Production Startup Script (V2)
 set -e
 
-echo "🚀 Starting Reddit Demand Radar Production Environment"
+echo "🚀 Starting Reddit Demand Radar (Docker Compose V2 Mode)"
 echo "=================================================="
 
-# Check if .env file exists
+# 1. Проверка .env
 if [ ! -f .env ]; then
     echo "❌ Error: .env file not found!"
-    echo "Please copy .env.example to .env and configure your environment variables."
     exit 1
 fi
 
-# Load environment variables
 source .env
 
-# Check required environment variables
+# 2. Функция проверки переменных
 check_env_var() {
-    # Получаем значение переменной по её имени (косвенная ссылка)
     local var_value="${!1}"
-    # Приводим имя переменной к нижнему регистру универсальным способом
-    local lower_name=$(echo "$1" | tr '[:upper:]' '[:lower:]')
-    local placeholder="your_${lower_name}_here"
-
-    if [ -z "$var_value" ] || [ "$var_value" = "$placeholder" ]; then
-        echo "❌ Error: $1 is not set in .env file"
+    if [ -z "$var_value" ]; then
+        echo "❌ Error: $1 is not set in .env"
         exit 1
     fi
 }
 
-echo "📋 Checking required environment variables..."
+echo "📋 Validating environment..."
 check_env_var "REDDIT_CLIENT_ID"
 check_env_var "REDDIT_SECRET_KEY"
-check_env_var "REDDIT_USER_AGENT"
+check_env_var "DATABASE_URL"
+check_env_var "REDIS_URL"
 check_env_var "GOOGLE_GEMINI_API_KEY"
-echo "✅ All required environment variables are set"
+echo "✅ Environment is ready"
 
-# Create necessary directories
-echo "📁 Creating necessary directories..."
-mkdir -p database
-mkdir -p nginx/conf.d
-mkdir -p nginx/ssl
-mkdir -p nginx/logs
+# 3. Чистка мусора и папок
+echo "📁 Preparing directories..."
+mkdir -p nginx/conf.d nginx/ssl nginx/logs
 
-# Build and start services
-echo "🏗️  Building and starting services..."
-docker-compose build --no-cache
+# 4. Сборка и запуск через V2
+echo "🏗️  Building images..."
+docker compose build  # <-- Вот тут убрали дефис
 
-echo "🐳 Starting services..."
-docker-compose up -d
+echo "🐳 Starting containers..."
+docker compose up -d  # <-- И тут
 
-# Wait for services to be ready
-echo "⏳ Waiting for services to be ready..."
+# 5. Проверка здоровья
+echo "⏳ Waiting for services (10s)..."
 sleep 10
 
-# Check service health
 echo "🏥 Checking service health..."
 
-# Check PostgreSQL
-echo "  Checking PostgreSQL..."
-if docker-compose exec -T postgres pg_isready -U ${POSTGRES_USER:-reddit_user} -d ${POSTGRES_DB:-reddit_radar} > /dev/null 2>&1; then
-    echo "  ✅ PostgreSQL is ready"
+# Проверка Redis через V2
+if docker compose exec -T redis redis-cli -a ${REDIS_PASSWORD} ping | grep -q PONG; then
+    echo "  ✅ Redis: Online"
 else
-    echo "  ❌ PostgreSQL is not ready"
+    echo "  ❌ Redis: Connection failed"
 fi
 
-# Check Redis
-echo "  Checking Redis..."
-if docker-compose exec -T redis redis-cli ping > /dev/null 2>&1; then
-    echo "  ✅ Redis is ready"
+# Проверка Backend
+if curl -s -f http://localhost:4000/health > /dev/null 2>&1; then
+    echo "  ✅ Backend API: Online"
 else
-    echo "  ❌ Redis is not ready"
+    echo "  ⚠️  Backend: Still starting or check logs (docker compose logs backend)"
 fi
 
-# Check Backend
-echo "  Checking Backend..."
-if curl -f http://localhost:4000/health > /dev/null 2>&1; then
-    echo "  ✅ Backend is ready"
+# Проверка Frontend
+if curl -s -f http://localhost:3000 > /dev/null 2>&1; then
+    echo "  ✅ Frontend: Online"
 else
-    echo "  ⚠️  Backend might still be starting (check logs with: docker-compose logs backend)"
-fi
-
-# Check Frontend
-echo "  Checking Frontend..."
-if curl -f http://localhost:3000 > /dev/null 2>&1; then
-    echo "  ✅ Frontend is ready"
-else
-    echo "  ⚠️  Frontend might still be starting (check logs with: docker-compose logs frontend)"
+    echo "  ⚠️  Frontend: Check logs (docker compose logs frontend)"
 fi
 
 echo ""
-echo "🎉 Reddit Demand Radar is starting up!"
-echo ""
-echo "📊 Services Status:"
-echo "   - PostgreSQL: localhost:5432"
-echo "   - Redis: localhost:6379"
-echo "   - Backend API: http://localhost:4000"
-echo "   - Frontend: http://localhost:3000"
-echo ""
-echo "🔧 Management Commands:"
-echo "   - View logs: docker-compose logs [service]"
-echo "   - Stop services: docker-compose down"
-echo "   - Restart services: docker-compose restart"
-echo "   - View service status: docker-compose ps"
-echo ""
-echo "⚠️  Important Notes:"
-echo "   - Make sure to configure your Reddit API credentials in .env"
-echo "   - Configure your Gemini API key in .env"
-echo "   - For production, consider setting up SSL with the nginx profile"
-echo "   - Monitor logs regularly for any issues"
-echo ""
-echo "✨ Happy analyzing!"
+echo "🎉 System is up via Docker Compose V2!"
+echo "--------------------------------------------------"
+echo "🔗 Frontend: http://localhost:3000"
+echo "--------------------------------------------------"
