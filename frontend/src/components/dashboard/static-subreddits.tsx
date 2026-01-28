@@ -42,11 +42,13 @@ const STATIC_SUBREDDITS: StaticSubreddit[] = [
 interface StaticSubredditsProps {
   selectedSubreddits: string[];
   onSubredditClick: (subreddit: string) => void;
+  disabled?: boolean;
 }
 
 export function StaticSubreddits({
   selectedSubreddits,
   onSubredditClick,
+  disabled = false,
 }: StaticSubredditsProps) {
   return (
     <div className="space-y-2">
@@ -61,6 +63,8 @@ export function StaticSubreddits({
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               transition={{ duration: 0.15 }}
+              disabled={disabled}
+              className={disabled ? "cursor-not-allowed opacity-50" : ""}
             >
               <Badge
                 variant={isSelected ? "default" : "outline"}

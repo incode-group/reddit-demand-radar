@@ -24,6 +24,8 @@ export class AnalysisService {
 
   private readonly MAX_SUBREDDITS_COUNT = 1;
   private readonly MAX_KEYWORDS_COUNT = 3;
+  private readonly MAX_TOTAL_POSTS = 100;
+  private readonly MAX_POSTS_FOR_COMMENTS = 50;
 
   constructor(
     private readonly redis: RedisService,
@@ -266,6 +268,13 @@ export class AnalysisService {
       const subredditStartTime = Date.now();
       this.logger.log(`Fetching posts from r/${subreddit}...`);
 
+      if (allPosts.length >= this.MAX_TOTAL_POSTS) {
+        this.logger.warn(
+          `Reached global limit of ${this.MAX_TOTAL_POSTS} posts. Stopping.`,
+        );
+        break;
+      }
+
       try {
         // Add delay between requests
         await this.delay(this.REQUEST_DELAY);
@@ -474,10 +483,12 @@ export class AnalysisService {
       `Starting comments analysis for ${data.length} posts with keywords: [${keywords.join(", ")}]`,
     );
 
+    const limitedData = data.slice(0, this.MAX_POSTS_FOR_COMMENTS);
+
     // Fetch comments for each post
     const commentsData: CommentsAnalysisInput[] = [];
 
-    for (const post of data) {
+    for (const post of limitedData) {
       try {
         // Add delay between comment requests
         await this.delay(this.REQUEST_DELAY);

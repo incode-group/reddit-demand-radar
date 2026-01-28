@@ -175,6 +175,7 @@ export function KeywordInput({
       <StaticKeywords
         selectedKeywords={keywords}
         onKeywordClick={handleStaticKeywordClick}
+        disabled={keywords.length >= 3}
       />
 
       <div className="relative flex gap-2">

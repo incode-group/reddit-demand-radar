@@ -42,11 +42,13 @@ const STATIC_KEYWORDS: StaticKeyword[] = [
 interface StaticKeywordsProps {
   selectedKeywords: string[];
   onKeywordClick: (keyword: string) => void;
+  disabled?: boolean;
 }
 
 export function StaticKeywords({
   selectedKeywords,
   onKeywordClick,
+  disabled = false,
 }: StaticKeywordsProps) {
   return (
     <div className="space-y-2">
@@ -61,6 +63,8 @@ export function StaticKeywords({
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               transition={{ duration: 0.15 }}
+              disabled={disabled}
+              className={disabled ? "cursor-not-allowed opacity-50" : ""}
             >
               <Badge
                 variant={isSelected ? "default" : "outline"}

@@ -155,6 +155,7 @@ export function SubredditSelector({
       <StaticSubreddits
         selectedSubreddits={subreddits}
         onSubredditClick={handleStaticSubredditClick}
+        disabled={subreddits.length >= 1}
       />
 
       <div className="relative flex gap-2">

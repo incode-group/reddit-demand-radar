@@ -9,7 +9,7 @@ services:
     volumes:
       - redis_data:/data
     ports:
-      - "6379:6379"
+      - "6380:6379"
     networks:
       - reddit_radar_network
     healthcheck:
@@ -36,9 +36,9 @@ services:
       GOOGLE_GEMINI_API_KEY: ${GOOGLE_GEMINI_API_KEY}
       GOOGLE_SUGGEST_API_URL: ${GOOGLE_SUGGEST_API_URL}
       REDDIT_SUBREDDIT_NAME_SEARCH_API_URL: ${REDDIT_SUBREDDIT_NAME_SEARCH_API_URL}
-      CORS_ORIGIN: http://localhost:3000
+      CORS_ORIGIN: ${FRONTEND_URL}
     ports:
-      - "4000:4000"
+      - "4001:4000"
     networks:
       - reddit_radar_network
     depends_on:
@@ -59,7 +59,7 @@ services:
       NODE_ENV: production
       NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL}
     ports:
-      - "3000:3000"
+      - "3001:3000"
     networks:
       - reddit_radar_network
     depends_on:
