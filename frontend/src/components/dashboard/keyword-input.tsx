@@ -190,6 +190,7 @@ export function KeywordInput({
                 setShowSuggestions(true);
               }
             }}
+            disabled={keywords.length >= 3}
             className="flex-1"
           />
           {isLoading && (
@@ -235,6 +236,7 @@ export function KeywordInput({
           variant="outline"
           size="default"
           className="shrink-0"
+          disabled={keywords.length >= 3}
         >
           <Plus className="h-4 w-4 mr-2" />
           Add

@@ -28,28 +28,31 @@ export function SubredditSelector({
   const debounceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Debounced search function
-  const performSearch = React.useCallback(async (query: string) => {
-    if (!query || query.trim().length < 2) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      setIsLoading(false);
-      return;
-    }
+  const performSearch = React.useCallback(
+    async (query: string) => {
+      if (!query || query.trim().length < 2) {
+        setSuggestions([]);
+        setShowSuggestions(false);
+        setIsLoading(false);
+        return;
+      }
 
-    setIsLoading(true);
-    try {
-      const results = await searchSubreddits(query);
-      setSuggestions(results.filter((s) => !subreddits.includes(s)));
-      setShowSuggestions(results.length > 0);
-      setSelectedIndex(-1);
-    } catch (error) {
-      console.error("Error fetching suggestions:", error);
-      setSuggestions([]);
-      setShowSuggestions(false);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [subreddits]);
+      setIsLoading(true);
+      try {
+        const results = await searchSubreddits(query);
+        setSuggestions(results.filter((s) => !subreddits.includes(s)));
+        setShowSuggestions(results.length > 0);
+        setSelectedIndex(-1);
+      } catch (error) {
+        console.error("Error fetching suggestions:", error);
+        setSuggestions([]);
+        setShowSuggestions(false);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [subreddits],
+  );
 
   // Handle input change with debounce
   const handleInputChange = React.useCallback(
@@ -69,7 +72,7 @@ export function SubredditSelector({
         performSearch(value);
       }, 1000);
     },
-    [performSearch]
+    [performSearch],
   );
 
   // Cleanup on unmount
@@ -82,7 +85,8 @@ export function SubredditSelector({
   }, []);
 
   const handleAdd = (subreddit?: string) => {
-    const value = subreddit || inputValue.trim().toLowerCase().replace(/^r\//, "");
+    const value =
+      subreddit || inputValue.trim().toLowerCase().replace(/^r\//, "");
     if (value && !subreddits.includes(value)) {
       onSubredditsChange([...subreddits, value]);
       setInputValue("");
@@ -115,7 +119,7 @@ export function SubredditSelector({
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
       setSelectedIndex((prev) =>
-        prev < suggestions.length - 1 ? prev + 1 : prev
+        prev < suggestions.length - 1 ? prev + 1 : prev,
       );
       setShowSuggestions(true);
     } else if (e.key === "ArrowUp") {
@@ -166,6 +170,7 @@ export function SubredditSelector({
                 setShowSuggestions(true);
               }
             }}
+            disabled={subreddits.length >= 1}
             className="flex-1"
           />
           {isLoading && (
@@ -211,6 +216,7 @@ export function SubredditSelector({
           variant="outline"
           size="default"
           className="shrink-0"
+          disabled={subreddits.length >= 1}
         >
           <Plus className="h-4 w-4 mr-2" />
           Add

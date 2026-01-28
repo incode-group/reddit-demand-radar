@@ -24,12 +24,33 @@ check_env_var() {
 }
 
 echo "📋 Validating environment..."
+
+# Reddit Auth
 check_env_var "REDDIT_CLIENT_ID"
 check_env_var "REDDIT_SECRET_KEY"
+check_env_var "REDDIT_USER_AGENT"
+
+# Server & DB
+check_env_var "PORT"
 check_env_var "DATABASE_URL"
+check_env_var "FRONTEND_URL"
+
+# Redis
 check_env_var "REDIS_URL"
+check_env_var "REDIS_PASSWORD"
+
+# AI Configuration
+check_env_var "AI_PROVIDER"
 check_env_var "GOOGLE_GEMINI_API_KEY"
-echo "✅ Environment is ready"
+
+# External APIs
+check_env_var "REDDIT_SUBREDDIT_NAME_SEARCH_API_URL"
+check_env_var "GOOGLE_SUGGEST_API_URL"
+
+# Frontend/Fullstack
+check_env_var "NEXT_PUBLIC_BACKEND_URL"
+
+echo "✅ All environment variables are set"
 
 # 3. Чистка мусора и папок
 echo "📁 Preparing directories..."
@@ -44,7 +65,7 @@ docker compose up -d  # <-- И тут
 
 # 5. Проверка здоровья
 echo "⏳ Waiting for services (10s)..."
-sleep 10
+sleep 15
 
 echo "🏥 Checking service health..."
 

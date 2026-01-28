@@ -18,6 +18,10 @@ import { ResultsView } from "@/components/dashboard/results-view";
 export default function Home() {
   const [subreddits, setSubreddits] = React.useState<string[]>([]);
   const [keywords, setKeywords] = React.useState<string[]>([]);
+  const [isSubredditLimitReached, setIsSubredditLimitReached] =
+    React.useState(false);
+  const [isKeywordLimitReached, setIsKeywordLimitReached] =
+    React.useState(false);
   const [isAnalyzing, setIsAnalyzing] = React.useState(false);
   const [showResults, setShowResults] = React.useState(false);
   const [analysisResults, setAnalysisResults] = React.useState<any>(null);
@@ -72,6 +76,12 @@ export default function Home() {
       }
     };
   }, [requestId, polling]);
+
+  // Check limits
+  React.useEffect(() => {
+    setIsSubredditLimitReached(subreddits.length >= 1);
+    setIsKeywordLimitReached(keywords.length >= 3);
+  }, [subreddits.length, keywords.length]);
 
   const handleAnalyze = async () => {
     if (subreddits.length === 0 || keywords.length === 0) {

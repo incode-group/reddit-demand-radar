@@ -203,7 +203,7 @@ export class AnalysisService {
         `Validation failed: Too many subreddits (${request.subreddits.length}), maximum 3 allowed`,
       );
       throw new HttpException(
-        "Maximum 3 subreddits allowed",
+        "Maximum 1 subreddit allowed",
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -213,7 +213,7 @@ export class AnalysisService {
         `Validation failed: Too many keywords (${request.keywords.length}), maximum 5 allowed`,
       );
       throw new HttpException(
-        "Maximum 5 keywords allowed",
+        "Maximum 3 keywords allowed",
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -429,8 +429,23 @@ export class AnalysisService {
       `Created ${analysisInputs.length} analysis inputs, each truncated to 500 characters`,
     );
 
-    const analysisResults =
-      await this.geminiProvider.analyzeMultiple(analysisInputs);
+    // Process analysis requests sequentially
+    const analysisResults: AnalysisResult[] = [];
+    for (const input of analysisInputs) {
+      try {
+        const result = await this.geminiProvider.analyzeText(input);
+        analysisResults.push(result);
+      } catch (error) {
+        this.logger.error("Error analyzing input:", error);
+        analysisResults.push({
+          mentioned: false,
+          mentionedKeywords: [],
+          snippet: "",
+          confidence: 0,
+          analysis: "Analysis failed",
+        });
+      }
+    }
 
     // Add subreddit and post link information to analysis results
     const enrichedResults = analysisResults.map((result, index) => ({

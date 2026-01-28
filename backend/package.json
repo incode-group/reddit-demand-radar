@@ -25,6 +25,7 @@
     "ioredis": "^5.9.2",
     "natural": "^8.1.0",
     "openai": "^6.16.0",
+    "p-limit": "^6.2.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },

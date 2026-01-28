@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Reddit Demand Radar - AI Market Research",
   description: "Discover market opportunities by analyzing Reddit discussions",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
