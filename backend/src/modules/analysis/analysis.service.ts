@@ -12,6 +12,7 @@ import * as natural from "natural";
 import { RedisService } from "../redis/redis.service";
 import { AnalyticsService } from "../analytics/analytics.service";
 import { StatusService } from "../status/status.service";
+import { PrismaService } from "../prisma/prisma.service";
 import { Logger } from "@nestjs/common";
 import { Request } from "express";
 
@@ -33,6 +34,7 @@ export class AnalysisService {
     private geminiProvider: GeminiProvider,
     private analyticsService: AnalyticsService,
     private statusService: StatusService,
+    private prisma: PrismaService, // Add PrismaService
   ) {}
 
   async analyzeContent(
@@ -100,6 +102,7 @@ export class AnalysisService {
       const analysisResults = await this.performAIAnalysis(
         filteredData,
         request.keywords,
+        statusId, // Pass the request ID
       );
       const highIntentResults = analysisResults.filter(
         (result) => result.mentioned,
@@ -136,16 +139,19 @@ export class AnalysisService {
         90,
       );
 
+      // Calculate total tokens spent
+      const totalTokensSpent = await this.getTotalTokensSpent(statusId);
+
       const response = {
         subreddits: request.subreddits,
         keywords: request.keywords,
         totalPosts: redditData.length,
-        filteredPosts: filteredData.length,
         analysisResults,
         commentsAnalysisResults,
         highIntentCount: highIntentResults.length,
         highIntentCommentsCount: highIntentCommentResults.length,
         processingTime: new Date().toISOString(),
+        tokensSpent: totalTokensSpent,
       };
 
       this.logger.log(
@@ -176,6 +182,24 @@ export class AnalysisService {
       await this.statusService.markFailed(statusId, error.message);
 
       throw error;
+    }
+  }
+
+  private async getTotalTokensSpent(requestId: string): Promise<number> {
+    try {
+      const totalTokens = await this.prisma.geminiRequest.aggregate({
+        _sum: {
+          totalTokens: true,
+        },
+        where: {
+          requestId: requestId,
+        },
+      });
+
+      return totalTokens._sum.totalTokens || 0;
+    } catch (error) {
+      this.logger.error("Failed to get total tokens spent:", error);
+      return 0;
     }
   }
 
@@ -423,6 +447,7 @@ export class AnalysisService {
   private async performAIAnalysis(
     data: any[],
     keywords: string[],
+    requestId: string,
   ): Promise<AnalysisResult[]> {
     const startTime = Date.now();
     this.logger.log(
@@ -432,6 +457,7 @@ export class AnalysisService {
     const analysisInputs: AnalysisInput[] = data.map((item) => ({
       text: this.truncateText(item.title + " " + (item.selftext || ""), 500),
       keywords: keywords,
+      requestId: requestId, // Pass request ID for token tracking
     }));
 
     this.logger.log(

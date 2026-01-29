@@ -61,6 +61,7 @@ model GeminiRequest {
   completionTokens Int
   totalTokens     Int
   model           String
+  requestId       String?  // Request ID for tracking tokens per analysis request
   timestamp       DateTime @default(now())
   
   @@map("gemini_requests")

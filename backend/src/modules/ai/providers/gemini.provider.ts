@@ -42,6 +42,7 @@ export class GeminiProvider implements AiProviderInterface {
             usage.promptTokenCount || 0,
             usage.candidatesTokenCount || 0,
             this.model,
+            input.requestId, // Pass request ID if available
           )
           .catch((error) =>
             console.error("Failed to track Gemini request:", error),

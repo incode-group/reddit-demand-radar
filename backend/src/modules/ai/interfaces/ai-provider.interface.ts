@@ -14,6 +14,7 @@ export interface AIAnalysisResponse {
 export interface AnalysisInput {
   text: string;
   keywords: string[];
+  requestId?: string; // Optional request ID for tracking tokens
 }
 
 export interface AnalysisResult {

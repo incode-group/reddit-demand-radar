@@ -44,12 +44,12 @@ interface AnalysisResponse {
   subreddits: string[];
   keywords: string[];
   totalPosts: number;
-  filteredPosts: number;
   analysisResults: AnalysisResult[];
   commentsAnalysisResults: CommentsAnalysisResult[];
   highIntentCount: number;
   highIntentCommentsCount: number;
   processingTime: string;
+  tokensSpent: number;
 }
 
 interface ResultsViewProps {
@@ -70,9 +70,9 @@ export function ResultsView({ results }: ResultsViewProps) {
     subreddits,
     keywords,
     totalPosts,
-    filteredPosts,
     highIntentCount,
     processingTime,
+    tokensSpent,
   } = results;
 
   return (
@@ -102,12 +102,12 @@ export function ResultsView({ results }: ResultsViewProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Filtered Posts</p>
+                <p className="text-sm text-gray-600">Tokens Spent</p>
                 <p className="text-2xl font-bold text-[#6b21a8]">
-                  {filteredPosts}
+                  {tokensSpent.toLocaleString()}
                 </p>
               </div>
-              <Target className="h-8 w-8 text-[#6b21a8] opacity-20" />
+              <Sparkles className="h-8 w-8 text-[#6b21a8] opacity-20" />
             </div>
           </CardContent>
         </Card>
@@ -263,10 +263,6 @@ export function ResultsView({ results }: ResultsViewProps) {
                               <Badge variant="outline" className="text-xs">
                                 Confidence:{" "}
                                 {Math.round(result.confidence * 100)}%
-                              </Badge>
-                              <Badge variant="outline" className="text-xs">
-                                Comments: {result.analyzedCommentCount}/
-                                {result.commentCount}
                               </Badge>
                               {result.mentionedKeywords.length > 0 && (
                                 <Badge variant="secondary" className="text-xs">

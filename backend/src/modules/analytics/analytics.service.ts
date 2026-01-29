@@ -12,6 +12,7 @@ export class AnalyticsService {
     promptTokens: number,
     completionTokens: number,
     model: string,
+    requestId?: string,
   ): Promise<void> {
     try {
       await this.prisma.geminiRequest.create({
@@ -20,10 +21,11 @@ export class AnalyticsService {
           completionTokens,
           totalTokens: promptTokens + completionTokens,
           model,
+          requestId,
         },
       });
       this.logger.log(
-        `Tracked Gemini request: ${promptTokens} prompt + ${completionTokens} completion tokens = ${promptTokens + completionTokens} total`,
+        `Tracked Gemini request: ${promptTokens} prompt + ${completionTokens} completion tokens = ${promptTokens + completionTokens} total (Request ID: ${requestId || "N/A"})`,
       );
     } catch (error) {
       this.logger.error("Failed to track Gemini request:", error);
