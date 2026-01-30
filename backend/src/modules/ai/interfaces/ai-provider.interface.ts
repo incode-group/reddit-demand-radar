@@ -23,6 +23,7 @@ export interface AnalysisResult {
   snippet: string;
   confidence: number;
   analysis: string;
+  header?: string;
 }
 
 export interface CommentsAnalysisInput {
@@ -33,6 +34,7 @@ export interface CommentsAnalysisInput {
 
 export interface CommentsAnalysisResult {
   postId: string;
+  postLink?: string;
   mentioned: boolean;
   mentionedKeywords: string[];
   snippet: string;

@@ -69,7 +69,8 @@ Please provide your analysis in the following JSON format:
   "mentionedKeywords": string[],
   "snippet": string,
   "confidence": number,
-  "analysis": string
+  "analysis": string,
+  "header": string
 }
 
 Where:
@@ -78,6 +79,7 @@ Where:
 - "snippet": a short excerpt (1-2 sentences) from the text that contains the relevant mention
 - "confidence": a number between 0 and 1 indicating confidence in the analysis
 - "analysis": a brief explanation of your reasoning
+- "header": the title/header of the post (extract from the beginning of the text if available)
 
 Focus on identifying:
 1. Direct requests to buy products/services
@@ -112,6 +114,7 @@ Return ONLY the JSON response, no additional text or explanations.`;
             ? Math.max(0, Math.min(1, parsed.confidence))
             : 0,
         analysis: typeof parsed.analysis === "string" ? parsed.analysis : "",
+        header: typeof parsed.header === "string" ? parsed.header : "",
       };
     } catch (error) {
       console.error("Error parsing AI response:", error);

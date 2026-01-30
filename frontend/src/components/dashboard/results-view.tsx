@@ -27,10 +27,12 @@ interface AnalysisResult {
   analysis: string;
   subreddit?: string;
   postLink?: string;
+  header?: string;
 }
 
 interface CommentsAnalysisResult {
   postId: string;
+  postLink?: string;
   mentioned: boolean;
   mentionedKeywords: string[];
   snippet: string;
@@ -166,7 +168,20 @@ export function ResultsView({ results }: ResultsViewProps) {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <CardTitle className="text-lg mb-2">
-                          High Intent Post Match
+                          {result.header && (
+                            <a
+                              href={result.postLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="items-center gap-5 w-auto"
+                            >
+                              <span className="text-lg font-semibold">
+                                {result.header.length > 100
+                                  ? `${result.header.substring(0, 100)}...`
+                                  : result.header}
+                              </span>
+                            </a>
+                          )}
                         </CardTitle>
                         <CardDescription className="flex items-center gap-4 flex-wrap">
                           <Badge variant="outline" className="text-xs">
@@ -270,12 +285,6 @@ export function ResultsView({ results }: ResultsViewProps) {
                                   {result.mentionedKeywords.join(", ")}
                                 </Badge>
                               )}
-                              <Badge
-                                variant="default"
-                                className="text-xs bg-blue-100 text-blue-800"
-                              >
-                                Post ID: {result.postId}
-                              </Badge>
                             </CardDescription>
                           </div>
                         </div>
@@ -297,6 +306,20 @@ export function ResultsView({ results }: ResultsViewProps) {
                             <p className="text-gray-700">{result.analysis}</p>
                           </div>
                         </div>
+
+                        {result.postLink && (
+                          <div className="flex justify-end mt-4">
+                            <a
+                              href={result.postLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 text-[#6b21a8] hover:text-[#7c3aed] font-medium transition-colors"
+                            >
+                              View Post
+                              <ArrowUpRight className="h-4 w-4" />
+                            </a>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   </motion.div>

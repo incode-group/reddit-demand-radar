@@ -478,6 +478,7 @@ export class AnalysisService {
           snippet: "",
           confidence: 0,
           analysis: "Analysis failed",
+          header: "",
         });
       }
     }
@@ -548,15 +549,24 @@ export class AnalysisService {
     const commentsAnalysisResults =
       await this.geminiProvider.analyzeMultipleComments(commentsData);
 
+    // Add post links to comments analysis results
+    const enrichedCommentsResults = commentsAnalysisResults.map((result) => {
+      const postData = data.find((post) => post.id === result.postId);
+      return {
+        ...result,
+        postLink: postData?.postLink,
+      };
+    });
+
     const duration = Date.now() - startTime;
-    const highIntentCommentResults = commentsAnalysisResults.filter(
+    const highIntentCommentResults = enrichedCommentsResults.filter(
       (result) => result.mentioned,
     );
     this.logger.log(
-      `Comments analysis completed in ${duration}ms: ${commentsAnalysisResults.length} analyzed, ${highIntentCommentResults.length} high-intent matches found`,
+      `Comments analysis completed in ${duration}ms: ${enrichedCommentsResults.length} analyzed, ${highIntentCommentResults.length} high-intent matches found`,
     );
 
-    return commentsAnalysisResults;
+    return enrichedCommentsResults;
   }
 
   private truncateText(text: string, maxLength: number): string {
