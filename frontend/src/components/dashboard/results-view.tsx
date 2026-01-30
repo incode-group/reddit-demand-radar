@@ -58,6 +58,36 @@ interface ResultsViewProps {
   results: AnalysisResponse;
 }
 
+function highlightKeywords(text: string, keywords: string[]): React.ReactNode {
+  if (!text || !keywords || keywords.length === 0) {
+    return text;
+  }
+
+  // Create a regex pattern that matches any of the keywords (case insensitive)
+  const pattern = keywords
+    .map((keyword) => keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|");
+  const regex = new RegExp(`(${pattern})`, "gi");
+
+  // Split text by keyword matches and wrap matches in span
+  const parts = text.split(regex);
+
+  return parts.map((part, index) => {
+    // If part matches a keyword (odd index), wrap in span
+    if (regex.test(part)) {
+      return (
+        <span
+          key={index}
+          className="bg-purple-200 text-purple-800 font-medium px-1 rounded"
+        >
+          {part}
+        </span>
+      );
+    }
+    return part;
+  });
+}
+
 export function ResultsView({ results }: ResultsViewProps) {
   if (!results || !results.analysisResults) {
     return (
@@ -211,7 +241,12 @@ export function ResultsView({ results }: ResultsViewProps) {
                           Snippet:
                         </h3>
                         <p className="text-gray-800 bg-gray-50 p-3 rounded-lg">
-                          "{result.snippet}"
+                          "
+                          {highlightKeywords(
+                            result.snippet,
+                            result.mentionedKeywords,
+                          )}
+                          "
                         </p>
                       </div>
                       <div>
@@ -296,7 +331,10 @@ export function ResultsView({ results }: ResultsViewProps) {
                               Snippet:
                             </h3>
                             <p className="text-gray-800 bg-blue-50 p-3 rounded-lg">
-                              "{result.snippet}"
+                              {highlightKeywords(
+                                result.snippet,
+                                result.mentionedKeywords,
+                              )}
                             </p>
                           </div>
                           <div>
